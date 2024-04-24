@@ -19,18 +19,6 @@ Depending on your preference, you can either check your API by:
 - Running the React application in the browser and interacting with the API via
   the frontend
 
-You can import `challenge-2-superheroes.postman_collection.json` into Postman by
-pressing the `Import` button.
-
-![import postman](https://curriculum-content.s3.amazonaws.com/6130/phase-4-code-challenge-instructions/import_collection.png)
-
-Select `Upload Files`, navigate to this repo folder, and select
-`challenge-2-superheroes.postman_collection.json` as the file to import.
-
-## Setup
-
-The instructions assume you changed into the `code-challenge` folder **prior**
-to opening the code editor.
 
 To download the dependencies for the frontend and backend, run:
 
@@ -53,13 +41,6 @@ running:
 ```sh
 npm start --prefix client
 ```
-
-You are not being assessed on React, and you don't have to update any of the
-React code; the frontend code is available just so that you can test out the
-behavior of your API in a realistic setting.
-
-Your job is to build out the Flask API to add the functionality described in the
-deliverables below.
 
 ## Models
 
@@ -348,3 +329,12 @@ data, along with the appropriate HTTP status code:
   "errors": ["validation errors"]
 }
 ```
+
+
+## Deploy 
+Then deploy both the prepared react project and python flask server project 
+1. You can upload as a fullstack project 
+2. Or as separate projects
+
+
+Remember to Fork then Clone. 
