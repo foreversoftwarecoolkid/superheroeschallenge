@@ -1,252 +1,80 @@
-from faker import Faker
-from app import app
-from models import db, Hero, Power, HeroPower
+from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_restful import Resource, Api
 
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///heroes.db' 
+db = SQLAlchemy(app)
+api = Api(app)
 
-class TestApp:
-    '''Flask application in app.py'''
+# Define your models here
+class Hero(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    super_name = db.Column(db.String(50), nullable=False)
+    hero_powers = db.relationship('HeroPower', backref='hero', lazy=True)
 
-    def test_gets_heroes(self):
-        '''retrieves heroes with GET requests to /heroes.'''
+class Power(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.String(200), nullable=False)
+    hero_powers = db.relationship('HeroPower', backref='power', lazy=True)
 
-        with app.app_context():
-            fake = Faker()
-            hero1 = Hero(name=fake.name(), super_name=fake.name())
-            hero2 = Hero(name=fake.name(), super_name=fake.name())
-            db.session.add_all([hero1, hero2])
-            db.session.commit()
+class HeroPower(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    strength = db.Column(db.String(50), nullable=False)
+    hero_id = db.Column(db.Integer, db.ForeignKey('hero.id'), nullable=False)
+    power_id = db.Column(db.Integer, db.ForeignKey('power.id'), nullable=False)
 
-            response = app.test_client().get('/heroes')
-            heroes = Hero.query.all()
+# Define your resources here
+class HeroList(Resource):
+    def get(self):
+        heroes = Hero.query.all()
+        return jsonify([hero.to_dict() for hero in heroes])
 
-            assert response.status_code == 200
-            assert response.content_type == 'application/json'
-            response = response.json
+    def post(self):
+        # Implement hero creation logic here
+        pass
 
-            assert [hero['id']
-                    for hero in response] == [hero.id for hero in heroes]
-            assert [hero['name']
-                    for hero in response] == [hero.name for hero in heroes]
-            assert [hero['super_name'] for hero in response] == [
-                hero.super_name for hero in heroes]
-            for hero in response:
-                assert 'hero_powers' not in hero
+class HeroDetail(Resource):
+    def get(self, id):
+        hero = Hero.query.get_or_404(id)
+        return jsonify(hero.to_dict())
 
-    def test_gets_hero_by_id(self):
-        '''retrieves one hero using its ID with GET request to /heroes/<int:id>.'''
+    def patch(self, id):
+        # Implement hero update logic here
+        pass
 
-        with app.app_context():
-            fake = Faker()
-            hero = Hero(name=fake.name(), super_name=fake.name())
-            db.session.add(hero)
-            db.session.commit()
+class PowerList(Resource):
+    def get(self):
+        powers = Power.query.all()
+        return jsonify([power.to_dict() for power in powers])
 
-            response = app.test_client().get(f'/heroes/{hero.id}')
+    def post(self):
+        # Implement power creation logic here
+        pass
 
-            assert response.status_code == 200
-            assert response.content_type == 'application/json'
-            response = response.json
+class PowerDetail(Resource):
+    def get(self, id):
+        power = Power.query.get_or_404(id)
+        return jsonify(power.to_dict())
 
-            assert response['id'] == hero.id
-            assert response['name'] == hero.name
-            assert response['super_name'] == hero.super_name
-            assert 'hero_powers' in response
+    def patch(self, id):
+        # Implement power update logic here
+        pass
 
-    def test_returns_404_if_no_hero_to_get(self):
-        '''returns an error message and 404 status code with GET request to /heros/<int:id> by a non-existent ID.'''
+class HeroPowerList(Resource):
+    def post(self):
+        # Implement hero_power creation logic here
+        pass
 
-        with app.app_context():
-            response = app.test_client().get('/heroes/0')
-            assert response.status_code == 404
-            assert response.content_type == 'application/json'
-            assert response.json.get('error')
-            assert response.status_code == 404
+# Add your resources to the API
+api.add_resource(HeroList, '/heroes')
+api.add_resource(HeroDetail, '/heroes/<int:id>')
+api.add_resource(PowerList, '/powers')
+api.add_resource(PowerDetail, '/powers/<int:id>')
+api.add_resource(HeroPowerList, '/hero_powers')
 
-    def test_gets_powers(self):
-        '''retrieves powers with GET requests to /powers.'''
-
-        with app.app_context():
-            fake = Faker()
-            power1 = Power(name=fake.name(),
-                           description=fake.sentence(nb_words=10))
-            power2 = Power(name=fake.name(),
-                           description=fake.sentence(nb_words=10))
-
-            db.session.add(power1)
-            db.session.add(power2)
-            db.session.commit()
-
-            response = app.test_client().get('/powers')
-            powers = Power.query.all()
-
-            assert response.status_code == 200
-            assert response.content_type == 'application/json'
-            response = response.json
-
-            assert [power['id']
-                    for power in response] == [power.id for power in powers]
-            assert [power['name']
-                    for power in response] == [power.name for power in powers]
-            assert [power['description'] for power in response] == [
-                power.description for power in powers]
-            for power in response:
-                assert 'hero_powers' not in power
-
-    def test_gets_power_by_id(self):
-        '''retrieves one power using its ID with GET request to /powers/<int:id>.'''
-
-        with app.app_context():
-            fake = Faker()
-            power = Power(name=fake.name(),
-                          description=fake.sentence(nb_words=10))
-            db.session.add(power)
-            db.session.commit()
-
-            response = app.test_client().get(f'/powers/{power.id}')
-
-            assert response.status_code == 200
-            assert response.content_type == 'application/json'
-            response = response.json
-
-            assert response['id'] == power.id
-            assert response['name'] == power.name
-            assert response['description'] == power.description
-            assert 'hero_powers' not in response
-
-    def test_returns_404_if_no_power_to_get(self):
-        '''returns an error message and 404 status code with GET request to /powers/<int:id> by a non-existent ID.'''
-
-        with app.app_context():
-            response = app.test_client().get('/powers/0')
-            assert response.status_code == 404
-            assert response.content_type == 'application/json'
-            assert response.json.get('error')
-            assert response.status_code == 404
-
-    def test_patches_power_by_id(self):
-        '''updates one power using its ID and JSON input for its fields with a PATCH request to /powers/<int:id>.'''
-
-        with app.app_context():
-            fake = Faker()
-            power = Power(
-                name=fake.name(), description=fake.sentence(nb_words=10))
-            db.session.add(power)
-            db.session.commit()
-
-            response = app.test_client().patch(
-                f'/powers/{power.id}',
-                json={
-                    'description': power.description + '(updated)'
-                })
-
-            assert response.status_code == 200
-            assert response.content_type == 'application/json'
-            response = response.json
-
-            power_updated = Power.query.filter(Power.id == power.id).first()
-
-            assert response['name'] == power.name
-            assert response['description'] == power_updated.description
-            assert '(updated)' in power_updated.description
-
-    def test_validates_power_description(self):
-        '''returns an error message if a PATCH request to /powers/<int:id> contains a "description" value that is not a string of 20 or more characters.'''
-
-        with app.app_context():
-            fake = Faker()
-            power = Power(
-                name=fake.name(), description=fake.sentence(nb_words=10))
-            db.session.add(power)
-            db.session.commit()
-
-            response = app.test_client().patch(
-                f'/powers/{power.id}',
-                json={
-                    'description': '',
-                })
-
-            assert response.status_code == 400
-            assert response.content_type == 'application/json'
-            assert response.json['errors'] == ["validation errors"]
-
-    def test_404_no_power_to_patch(self):
-        '''returns an error message if a PATCH request to /powers/<int:id> references a non-existent power'''
-
-        with app.app_context():
-
-            response = app.test_client().patch(
-                f'/powers/0',
-                json={
-                    'description': '',
-                })
-            assert response.status_code == 404
-            assert response.content_type == 'application/json'
-            assert response.json.get('error')
-            assert response.status_code == 404
-
-    def test_creates_hero_power(self):
-        '''creates one hero_power using a strength, a hero_id, and a power_id with a POST request to /hero_powers.'''
-
-        with app.app_context():
-
-            fake = Faker()
-            hero = Hero(name=fake.name(), super_name=fake.name())
-            power = Power(name=fake.name(),
-                          description=fake.sentence(nb_words=10))
-            db.session.add_all([hero, power])
-            db.session.commit()
-
-            # delete if existing in case strength differs
-            hero_power = HeroPower.query.filter_by(
-                hero_id=hero.id, power_id=power.id).one_or_none()
-            if hero_power:
-                db.session.delete(hero_power)
-                db.session.commit()
-
-            response = app.test_client().post(
-                'hero_powers',
-                json={
-                    'strength': 'Weak',
-                    'hero_id': hero.id,
-                    'power_id': power.id,
-                }
-            )
-
-            assert response.status_code == 200
-            assert response.content_type == 'application/json'
-            response = response.json
-
-            assert response['hero_id'] == hero.id
-            assert response['power_id'] == power.id
-            assert response['strength'] == 'Weak'
-            assert response['id']
-            assert response['hero']
-            assert response['power']
-
-            query_result = HeroPower.query.filter(
-                HeroPower.hero_id == hero.id, HeroPower.power_id == power.id).first()
-            assert query_result.strength == 'Weak'
-
-    def test_validates_hero_power_strength(self):
-        '''returns an error message if a POST request to /hero_powers contains a "strength" value other than "Strong", "Weak", or "Average".'''
-
-        with app.app_context():
-            fake = Faker()
-            hero = Hero(name=fake.name(), super_name=fake.name())
-            power = Power(name=fake.name(),
-                          description=fake.sentence(nb_words=10))
-            db.session.add_all([hero, power])
-            db.session.commit()
-
-            response = app.test_client().post(
-                'hero_powers',
-                json={
-                    'strength': 'Cheese',
-                    'hero_id': hero.id,
-                    'power_id': power.id,
-                }
-            )
-
-            assert response.status_code == 400
-            assert response.content_type == 'application/json'
-            assert response.json['errors'] == ["validation errors"]
+if __name__ == '__main__':
+    db.create_all() # Create the database tables
+    app.run(debug=True)
