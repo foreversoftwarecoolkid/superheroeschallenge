@@ -1,3 +1,4 @@
+import React from "react"; // Import React module first
 import { Switch, Route } from "react-router-dom";
 import Header from "./Header";
 import Hero from "./Hero";

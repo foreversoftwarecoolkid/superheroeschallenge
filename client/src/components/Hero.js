@@ -10,21 +10,21 @@ function Hero() {
   const { id } = useParams();
 
   useEffect(() => {
-    fetch(`/heroes/${id}`).then((r) => {
-      if (r.ok) {
-        r.json().then((hero) =>
-          setHero({ data: hero, error: null, status: "resolved" })
-        );
-      } else {
-        r.json().then((err) =>
-          setHero({ data: null, error: err.error, status: "rejected" })
-        );
-      }
-    });
+    fetch(`/heroes/${id}`)
+      .then((r) => {
+        if (r.ok) {
+          return r.json();
+        } else {
+          throw new Error("Failed to fetch hero");
+        }
+      })
+      .then((hero) => setHero({ data: hero, error: null, status: "resolved" }))
+      .catch((error) => setHero({ data: null, error: error.message, status: "rejected" }));
   }, [id]);
 
   if (status === "pending") return <h1>Loading...</h1>;
-  if (status === "rejected") return <h1>Error: {error.error}</h1>;
+  if (status === "rejected") return <h1>Error: {error}</h1>;
+  if (!hero) return null; // Render nothing if hero data is not available yet
 
   return (
     <section>
@@ -33,8 +33,8 @@ function Hero() {
 
       <h3>Powers:</h3>
       <ul>
-        {hero.hero_powers.map((hero_power) => (
-          <li key={hero.id}>
+        {hero.hero_powers && hero.hero_powers.map((hero_power) => (
+          <li key={hero_power.power.id}>
             <Link to={`/powers/${hero_power.power.id}`}>
               {hero_power.power.name}
             </Link>

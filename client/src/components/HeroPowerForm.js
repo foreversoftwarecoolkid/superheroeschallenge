@@ -39,7 +39,13 @@ function HeroPowerForm() {
       if (r.ok) {
         history.push(`/heroes/${heroId}`);
       } else {
-        r.json().then((err) => setFormErrors(err.errors));
+        r.json().then((data) => {
+          if (data && data.errors && data.errors.length > 0) {
+            setFormErrors(data.errors);
+          } else {
+            setFormErrors(["An unexpected error occurred."]);
+          }
+        });
       }
     });
   }
@@ -82,13 +88,12 @@ function HeroPowerForm() {
         value={strength}
         onChange={(e) => setStrength(e.target.value)}
       />
-      {formErrors.length > 0
-        ? formErrors.map((err) => (
-            <p key={err} style={{ color: "red" }}>
-              {err}
-            </p>
-          ))
-        : null}
+      {formErrors.length > 0 &&
+        formErrors.map((err, index) => (
+          <p key={index} style={{ color: "red" }}>
+            {err}
+          </p>
+        ))}
       <button type="submit">Add Hero Power</button>
     </form>
   );
